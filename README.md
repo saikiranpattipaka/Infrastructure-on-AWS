@@ -2,7 +2,7 @@
 
 ### This Terraform configuration defines the setup of a scalable and secure AWS infrastructure. It includes the creation of a Virtual Private Cloud (VPC), multiple subnets, a security group, an S3 bucket, EC2 instances, an Application Load Balancer (ALB), and the necessary routing components. Below is an overview of each resource and its purpose:
 
-![Project Screenshot](./images"C:\Users\saiki\Downloads\Infrastructure on AWS using Terraform.gif")
+![Infrastructure on AWS using Terraform](https://github.com/user-attachments/assets/d7204e2b-e88c-49d7-9d6d-c87b25be02ef)
 
 ## VPC (Virtual Private Cloud):
 ### A VPC named terraform_vpc is created with a CIDR block defined by the variable cidr. The VPC serves as the isolated network for the resources that will be created.
