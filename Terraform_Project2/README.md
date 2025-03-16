@@ -9,3 +9,10 @@
 
 #### Database Tier: The database stores and manages our application data. In this architecture, we use Amazon RDS for a managed database service.
 ![alt text](image.png)
+
+
+
+### Features
+#### High Availability: The architecture is designed for fault tolerance and redundancy.
+#### Scalability: Easily scale the web and application tiers to handle varying workloads.
+#### Security: Security groups and network ACLs are configured to ensure a secure environment.
