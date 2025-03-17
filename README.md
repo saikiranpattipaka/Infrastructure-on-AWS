@@ -1,199 +1,84 @@
-## 1. Terraform Overview
+# Infrastructure on AWS using Terraform
 
-### Terraform is an open-source Infrastructure as Code (IaC) tool created by HashiCorp. It allows you to define, provision, and manage infrastructure through a declarative configuration language called HCL (HashiCorp Configuration Language). It enables automation of cloud infrastructure provisioning, reducing manual intervention and enabling version-controlled infrastructure.
+#### This Terraform configuration defines the setup of a scalable and secure AWS infrastructure. It includes the creation of a Virtual Private Cloud (VPC), multiple subnets, a security group, an S3 bucket, EC2 instances, an Application Load Balancer (ALB), and the necessary routing components. Below is an overview of each resource and its purpose:
 
-## 2. Terraform Core Concepts
-### a. Provider
-### A Provider is a plugin that Terraform uses to interact with APIs of cloud platforms and services (e.g., AWS, Azure, GCP, Kubernetes, etc.). Each provider is responsible for managing a specific set of resources. Providers allow you to configure the underlying infrastructure using Terraform’s declarative syntax.
+![Infrastructure on AWS using Terraform](https://github.com/user-attachments/assets/d7204e2b-e88c-49d7-9d6d-c87b25be02ef)
 
-Example:
-```
-provider "aws" {
-  region = "us-east-1"
-}
-```
+### VPC (Virtual Private Cloud):
+#### A VPC named terraform_vpc is created with a CIDR block defined by the variable cidr. The VPC serves as the isolated network for the resources that will be created.
 
-## b. Resources
-### A resource is the most fundamental building block of a Terraform configuration. It represents a component of the infrastructure (e.g., virtual machines, storage, databases).
+### Subnets:
+#### Two subnets (terraform_subnet1 and terraform_subnet2) are created in different availability zones (us-east-1a and us-east-1b).
+#### Both subnets are configured to automatically assign public IPs to instances launched within them.
 
-Example:
-```
-resource "aws_instance" "my_instance" {
-  ami           = "ami-12345678"
-  instance_type = "t2.micro"
-}
-```
+### Internet Gateway:
+#### An Internet Gateway (terraform_igw) is created and attached to the VPC to allow communication with the internet.
 
-## c. Modules
-### Modules are containers for multiple resources that are used together. They allow for code reuse and organization, which is essential in maintaining complex Terraform configurations. A module can be either local or external (public or private module repositories).
+### Route Table:
+#### A route table (terraform_route_table) is defined with a route that forwards all outbound traffic (0.0.0.0/0) through the Internet Gateway, enabling internet access for instances in the subnets.
 
-Example of using a module:
+### Route Table Associations:
+#### The route table is associated with both subnets to ensure that instances in these subnets use the same route for outbound traffic.
 
-```
-module "network" {
-  source = "./modules/network"
-  cidr_block = "10.0.0.0/16"
-}
-```
-### You can also use modules from the Terraform Registry:
+### Security Group:
+#### A security group (terraform_security_group) is created with rules to allow:
+#### Inbound HTTP traffic on port 80.
+#### Inbound SSH traffic on port 22.
+#### All outbound traffic (0.0.0.0/0).
+#### This security group is applied to the EC2 instances to ensure they can be accessed as needed.
 
-```
-module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
-  name   = "my-vpc"
-  cidr   = "10.0.0.0/16"
-}
-```
+### S3 Bucket:
+#### An S3 bucket (terraform_s3_bucket) is created with a globally unique name. The bucket can be used to store data as needed.
 
-## 3. Terraform Commands
+### EC2 Instances:
+#### Two EC2 instances (terraform_instance1 and terraform_instance2) are provisioned using a specified AMI and the t2.micro instance type.
+#### Both instances are placed in separate subnets, with custom user data scripts (userdata1.sh and userdata2.sh) used to initialize the instances.
 
-### Here are the key commands used in Terraform:
+### Application Load Balancer (ALB):
+#### An ALB (terraform_lb) is created and placed in both subnets, making it accessible to clients from the internet.
+#### The ALB is set up with a listener on port 80, forwarding traffic to a target group.
 
-#### `terraform init`: Initializes the working directory by downloading provider plugins and initializing the backend.
+### Target Group:
+#### A target group (terraform_target_group) is defined for the ALB. It uses HTTP protocol on port 80, with health checks configured to check the root path (/) of the instances.
 
-#### `terraform plan`: Creates an execution plan, showing what changes Terraform will make to the infrastructure.
+### Target Group Attachments:
+#### Both EC2 instances are registered with the target group to ensure that the ALB can route traffic to them.
 
-#### `terraform apply`: Applies the changes defined in the execution plan to the infrastructure.
+### Load Balancer Listener:
+#### A listener (terraform_lb_listener) is created for the ALB to listen on port 80. It is configured to forward traffic to the target group.
 
-#### `terraform destroy`: Destroys the infrastructure managed by Terraform.
+### Output:
+#### The DNS name of the ALB is outputted as loadbalancerdns, which can be used to access the load balancer.
 
-#### `terraform validate`: Validates the syntax and correctness of the configuration files.
+### Key Benefits:
+#### Scalable Infrastructure: The setup allows for easy scaling by adding more EC2 instances to the target group behind the ALB.
+#### High Availability: By distributing instances across multiple subnets in different availability zones, the infrastructure ensures fault tolerance.
+#### Secure Access: The security group restricts inbound access while allowing necessary traffic such as HTTP and SSH.
+#### Automated Deployment: The use of Terraform enables infrastructure as code, making it easy to version control and reproduce the setup.
 
-#### `terraform fmt`: Formats Terraform configuration files in a canonical style.
 
-#### `terraform show`: Shows the current state or an execution plan of the infrastructure.
 
-#### `terraform state`: Manages the Terraform state file (e.g., list, show, pull, push).
+### Prerequisites
+#### AWS IAM account
+#### AWS Access Key
+#### AWS CLI Installed
+#### Refer [AWS CLI Doc] (https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
-#### `terraform output`: Displays the outputs defined in the Terraform configuration.
+#### Terraform Installed
+#### Refer [Terraform ] (https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
 
-## 4. Variables
-### Variables allow you to parametrize your Terraform configurations, making them more reusable and flexible.
 
-### Defining variables:
 
-```
-variable "region" {
-  description = "The AWS region to deploy resources"
-  type        = string
-  default     = "us-east-1"
-}
-```
-### Using variables:
+#### create Providers - Refer Terraform provider doc
 
-```
-resource "aws_instance" "example" {
-  ami           = "ami-12345678"
-  instance_type = "t2.micro"
-  region        = var.region
-}
-```
+### Terraform Commands
+#### 1.terraform init - Preparing your working directory for other commands
+#### 2.terraform validate - Check whether the configuration is valid
+#### 3.terraform plan - Show changes required by the current configuration
+#### 4.terraform apply - Create or update infrastructure
+#### You can use terraform apply -auto -approve to skip yes command
+#### 5.destroy - Destroy previously-cretaed infrastructure
+#### Refer [Terraform AWS doc] (https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 
-### Passing variables can be done via:
 
-#### `-var` flag in the command line
-#### `terraform.tfvars` file
-#### Environment variables (e.g., `TF_VAR_region`)
-
-## 5. Conditions
-### You can use conditions (like `count`, `for_each`, `if-else`) in Terraform to create dynamic infrastructure.
-
-### Example of using `count` for conditionally creating resources:
-
-```
-resource "aws_instance" "example" {
-  count         = var.environment == "production" ? 3 : 1
-  ami           = "ami-12345678"
-  instance_type = "t2.micro"
-}
-```
-
-## 6. State File (State Management)
-### Terraform uses a state file (`terraform.tfstate`) to keep track of the infrastructure that it manages. The state file contains metadata, resource IDs, and other information about the infrastructure’s current state.
-
-### State File Operations:
-
-#### `terraform state list`: Lists all resources tracked in the state file.
-#### `terraform state show`: Displays detailed information about a specific resource in the state file.
-#### `terraform state pull`: Fetches the current state from the remote backend.
-### Remote backends (e.g., S3, Azure Blob Storage) can store the state file for team collaboration and to ensure the state is persistent across runs.
-
-### State Locking: To prevent concurrent writes to the state file, Terraform supports state locking when using remote backends (e.g., DynamoDB for AWS).
-
-## 7. Provisioners
-### Provisioners are used to execute scripts or configuration management tasks on your resources after they are created. They are typically used for bootstrapping or post-deployment tasks.
-
-### Types of provisioners:
-
-### `local-exec`: Runs a command locally on the machine running Terraform.
-### `remote-exec`: Runs a command on the remote resource (e.g., EC2 instance).
-
-### Example of remote-exec provisioner:
-
-```
-resource "aws_instance" "example" {
-  ami           = "ami-12345678"
-  instance_type = "t2.micro"
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt-get update",
-      "sudo apt-get install -y nginx"
-    ]
-  }
-}
-```
-
-## 8. Workspaces
-### Workspaces allow you to manage multiple environments (e.g., development, staging, production) with the same configuration files. Each workspace has its own state file.
-
-#### Switch workspace: `terraform workspace select <workspace_name>`
-#### List workspaces: `terraform workspace list`
-#### Create workspace: `terraform workspace new <workspace_name>`
-
-## 9. Vault Integration (Secret Management)
-### Terraform integrates with HashiCorp Vault to manage secrets, such as API keys, passwords, and certificates. Vault can store and provide sensitive data securely.
-
-### Example of reading a secret from Vault:
-
-```
-provider "vault" {
-  address = "https://vault.example.com"
-}
-
-data "vault_generic_secret" "example" {
-  path = "secret/data/my-secret"
-}
-
-resource "aws_secretsmanager_secret" "example" {
-  name = "my-secret"
-  secret_string = data.vault_generic_secret.example.data["value"]
-}
-```
-
-### Vault integration helps keep sensitive values out of your source code and securely stores them.
-
-## 10. Drift Detection
-### Drift detection refers to identifying changes that occur outside Terraform's control (e.g., manual changes made directly in the cloud provider's console). Terraform has the ability to detect drift when comparing the real-world infrastructure to the state file.
-
-### You can detect drift by running:
-
-```
-terraform plan
-```
-### Terraform will show you any differences between the current infrastructure and the desired state.
-
-### Drift Detection is a key feature in maintaining the desired state over time.
-
-## Additional Concepts
-### a. Outputs
-Outputs are used to extract information from your Terraform configurations, such as IP addresses, instance IDs, and URLs.
-
-```
-output "instance_ip" {
-  value = aws_instance.example.public_ip
-}
-```
-
-## b. Dependencies and Ordering
-#### Terraform automatically determines dependencies between resources by analyzing their references. For example, if `resource A` refers to `resource B`, Terraform will ensure that `resource B` is created before `resource A`.
+#### This project offers a simple yet flexible AWS infrastructure for hosting web applications with a load balancing mechanism and secure access control.
